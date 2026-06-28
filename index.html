@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LATOYA — وصف الموديلات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: #f5f0e8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 16px;
+  }
+
+  h1 {
+    font-size: 1rem;
+    letter-spacing: 3px;
+    color: #9a7a45;
+    margin-bottom: 28px;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #ddd5c4;
+    border-radius: 3px;
+    width: 100%;
+    max-width: 400px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* Upload */
+  .drop-area {
+    border: 2px dashed #ddd5c4;
+    border-radius: 2px;
+    padding: 36px 16px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    background: #faf5ec;
+    transition: border-color 0.2s;
+  }
+  .drop-area:hover { border-color: #c8a96e; }
+  .drop-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-area p { font-size: 0.88rem; color: #8a7d6e; line-height: 1.8; }
+
+  #preview-wrap { display: none; text-align: center; }
+  #preview-img { max-width: 100%; max-height: 260px; object-fit: contain; border: 1px solid #ddd5c4; }
+  .change-btn {
+    margin-top: 8px;
+    background: none;
+    border: 1px solid #ddd5c4;
+    padding: 6px 16px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: #8a7d6e;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .change-btn:hover { border-color: #c8a96e; color: #9a7a45; }
+
+  #analyze-btn {
+    width: 100%;
+    padding: 14px;
+    background: #1a1410;
+    color: #c8a96e;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 2px;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+  #analyze-btn:hover:not(:disabled) { background: #9a7a45; color: #fff; }
+  #analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #analyze-btn.loading { pointer-events: none; }
+
+  .spinner {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(200,169,110,0.3);
+    border-top-color: #c8a96e;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+  #analyze-btn.loading .btn-text { display: none; }
+  #analyze-btn.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Result */
+  #result {
+    display: none;
+    background: #1a1410;
+    color: #f5f0e8;
+    border-radius: 2px;
+    padding: 22px 20px;
+    text-align: center;
+  }
+
+  #res-label {
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #c8a96e;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  .colors-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .color-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 5px 12px;
+    border-radius: 2px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .color-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.2);
+    flex-shrink: 0;
+  }
+
+  .copy-btn {
+    margin-top: 16px;
+    background: none;
+    border: 1px solid rgba(200,169,110,0.4);
+    color: #c8a96e;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.82rem;
+    padding: 7px 20px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: rgba(200,169,110,0.15); }
+
+  .error-msg {
+    background: #fff0f0;
+    border: 1px solid #b85c5c;
+    color: #b85c5c;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    border-radius: 2px;
+    display: none;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: #1a1410;
+    color: #c8a96e;
+    padding: 10px 24px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 2px;
+    border: 1px solid #c8a96e;
+    transition: transform 0.3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<h1>✦ LATOYA FASHION DESCRIPTOR</h1>
+
+<div class="card">
+
+  <div class="drop-area" id="drop-area">
+    <input type="file" id="file-input" accept="image/*">
+    <p>🖼️<br><strong style="color:#9a7a45">ارفع صورة الموديل</strong><br>اسحب أو اضغط للاختيار</p>
+  </div>
+
+  <div id="preview-wrap">
+    <img id="preview-img" src="" alt="">
+    <br>
+    <button class="change-btn" onclick="resetImage()">↩ تغيير الصورة</button>
+  </div>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <button id="analyze-btn" onclick="analyze()" disabled>
+    <span class="btn-text">وصّف الموديل</span>
+    <div class="spinner"></div>
+  </button>
+
+  <div id="result">
+    <div id="res-label">—</div>
+    <div class="colors-row" id="res-colors"></div>
+    <button class="copy-btn" onclick="copyResult()">📋 نسخ</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const COLOR_MAP = {
+    'أبيض':'#FFFFFF','white':'#FFFFFF','أسود':'#1a1a1a','black':'#1a1a1a',
+    'أحمر':'#C0392B','red':'#C0392B','أزرق':'#2980B9','blue':'#2980B9',
+    'كحلي':'#1a3a5c','navy':'#1a3a5c','أزرق داكن':'#1a3a5c',
+    'أخضر':'#27AE60','green':'#27AE60','أصفر':'#F1C40F','yellow':'#F1C40F',
+    'برتقالي':'#E67E22','orange':'#E67E22','وردي':'#E91E8C','pink':'#E91E8C',
+    'بنفسجي':'#8E44AD','purple':'#8E44AD','بيج':'#D2B48C','beige':'#D2B48C',
+    'بني':'#795548','brown':'#795548','رمادي':'#7F8C8D','grey':'#7F8C8D','gray':'#7F8C8D',
+    'ذهبي':'#D4AF37','gold':'#D4AF37','فضي':'#BDC3C7','silver':'#BDC3C7',
+    'خمري':'#800020','burgundy':'#800020','تركواز':'#1ABC9C','turquoise':'#1ABC9C',
+    'كريمي':'#FFF8E7','cream':'#FFF8E7','زيتي':'#556B2F','olive':'#808000',
+    'كاكي':'#C3B091','khaki':'#C3B091','سالمون':'#FA8072','salmon':'#FA8072',
+    'لبني':'#FFF5E1','موف':'#967BB6','mauve':'#967BB6',
+    'فوشيا':'#FF00FF','fuchsia':'#FF00FF','كوبي':'#0047AB',
+  };
+
+  function getHex(name) {
+    const l = name.toLowerCase().trim();
+    for (const [k,v] of Object.entries(COLOR_MAP))
+      if (l.includes(k.toLowerCase())) return v;
+    return '#AAAAAA';
+  }
+
+  let imgBase64 = null;
+  let lastLabel = '', lastColors = [];
+
+  document.getElementById('file-input').addEventListener('change', e => handleFile(e.target.files[0]));
+
+  const dropArea = document.getElementById('drop-area');
+  dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.style.borderColor='#c8a96e'; });
+  dropArea.addEventListener('dragleave', () => dropArea.style.borderColor='');
+  dropArea.addEventListener('drop', e => { e.preventDefault(); dropArea.style.borderColor=''; handleFile(e.dataTransfer.files[0]); });
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const r = new FileReader();
+    r.onload = e => {
+      imgBase64 = e.target.result.split(',')[1];
+      document.getElementById('preview-img').src = e.target.result;
+      dropArea.style.display = 'none';
+      document.getElementById('preview-wrap').style.display = 'block';
+      document.getElementById('analyze-btn').disabled = false;
+    };
+    r.readAsDataURL(file);
+  }
+
+  function resetImage() {
+    imgBase64 = null;
+    dropArea.style.display = 'block';
+    document.getElementById('preview-wrap').style.display = 'none';
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('file-input').value = '';
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  async function analyze() {
+    if (!imgBase64) return;
+    const btn = document.getElementById('analyze-btn');
+    const errEl = document.getElementById('error-msg');
+    btn.classList.add('loading'); btn.disabled = true;
+    errEl.style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+
+    const prompt = `أنت خبير مرشندايزينج نسائي متخصص، بتشتغل على نفس معايير ZARA وH&M وASOS في تصنيف ووصف القطع.
+
+انظر للصورة وأعطني JSON فقط بدون أي نص خارجه:
+{
+  "label": "وصف دقيق للقطعة بالعربي فقط",
+  "colors": [
+    {"name": "اسم اللون بالعربي", "hex": "#RRGGBB"}
+  ]
+}
+
+═══ قواعد الـ label ═══
+الصيغة الثابتة: [نوع القطعة] + [الكات/السيلويت] + [الطول]
+بدون أي تفاصيل زيادة — لا أكمام، لا ياقة، لا مطبوعات، لا إكسسوارات.
+
+── أنواع القطع ──
+ملابس علوية: بلوزة / تيشيرت / تونيك / قميص / كارديجان / جاكيت / بليزر / كيب / بونشو
+ملابس سفلية: تنورة / بنطلون / شورت / لجنز
+قطعة كاملة: فستان / جمبسوت / أوفرول / بدلة
+قطعة داخلية/بُدي: بُدي / ترينج
+
+── الكات والسيلويت (اختار الأدق) ──
+• فيتد ← ضيق ومتماشي مع الجسم (ZARA: fitted / slim)
+• ستريت ← مستقيم بدون تدرج (H&M: straight / column)
+• واسع ← أوسع من المعتاد بشكل معتدل (ASOS: relaxed)
+• أوفرسايز ← كبير جداً بشكل مقصود (ZARA: oversized)
+• فليرد ← ينفتح من الخصر أو من تحت (H&M: flared / A-line)
+• سكيني ← ضيق جداً خاص بالبنطلون واللجنز
+• وايد ليج ← واسع من الركبة للأسفل
+• بوت كات ← ينفتح بس من تحت الركبة بس
+• كروب ← مقصوص قصير (للبلوزات والتوبات فقط)
+• راب ← لف حول الجسم
+
+── الطول (بالمعايير الدولية) ──
+• كروب ← فوق السرة (للتوبات والبلوزات فقط)
+• ميني ← من فوق الركبة لمنتصف الفخدة (ZARA mini)
+• ميدي ← من تحت الركبة للكاحل (ZARA midi = below knee, above ankle)
+• ماكسي ← عند الكاحل أو الأرض (ZARA/H&M maxi = floor length)
+• لو القطعة بطبيعتها مش ليها طول (بُدي، جاكيت قصير) → احذف الطول
+
+── أمثلة صح ──
+"فستان فليرد ميني" / "فستان فيتد ميدي" / "فستان ستريت ماكسي"
+"بلوزة واسعة كروب" / "تيشيرت أوفرسايز" / "قميص ستريت"
+"تنورة فليرد ميدي" / "تنورة فيتد ميني"
+"بنطلون وايد ليج" / "بنطلون سكيني" / "شورت فيتد"
+"جمبسوت ستريت ماكسي" / "بُدي فيتد"
+
+═══ قواعد الـ colors ═══
+- اللون الأساسي للقطعة فقط — لون واحد بالظبط
+- لو في الصورة كذا قطعة من نفس الموديل بألوان مختلفة: لون واحد لكل قطعة
+- تجاهل تماماً: الأكسسوارات / الحزام / الحذاء / الإسكارف / لون الموديل / الخلفية
+- JSON فقط، لا شيء غيره`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 300,
+          system: prompt,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgBase64 } },
+              { type: 'text', text: 'حدد نوع القطعة وألوانها فقط.' }
+            ]
+          }]
+        })
+      });
+
+      const data = await res.json();
+      const text = (data.content||[]).map(b=>b.text||'').join('');
+      const clean = text.replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(clean);
+
+      lastLabel = parsed.label || '—';
+      lastColors = (parsed.colors||[]).map(c => ({
+        name: c.name,
+        hex: (c.hex && c.hex.startsWith('#')) ? c.hex : getHex(c.name)
+      }));
+
+      document.getElementById('res-label').textContent = lastLabel;
+
+      const colorsEl = document.getElementById('res-colors');
+      colorsEl.innerHTML = '';
+      lastColors.forEach(c => {
+        const chip = document.createElement('div');
+        chip.className = 'color-chip';
+        chip.innerHTML = `<span class="color-dot" style="background:${c.hex}"></span>${c.name}`;
+        colorsEl.appendChild(chip);
+      });
+
+      document.getElementById('result').style.display = 'block';
+
+    } catch(err) {
+      errEl.textContent = '⚠️ حصل خطأ — حاول تاني';
+      errEl.style.display = 'block';
+    }
+
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+
+  function copyResult() {
+    const colors = lastColors.map(c=>c.name).join(' / ');
+    const text = `${lastLabel}\n${colors}`;
+    navigator.clipboard.writeText(text).then(() => showToast('✓ تم النسخ'));
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+</script>
+</body>
+</html>
