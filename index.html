@@ -248,6 +248,7 @@
   }
 
   let imgBase64 = null;
+  let imgMediaType = 'image/jpeg';
   let lastLabel = '', lastColors = [];
 
   document.getElementById('file-input').addEventListener('change', e => handleFile(e.target.files[0]));
@@ -259,6 +260,7 @@
 
   function handleFile(file) {
     if (!file || !file.type.startsWith('image/')) return;
+    imgMediaType = file.type || 'image/jpeg';
     const r = new FileReader();
     r.onload = e => {
       imgBase64 = e.target.result.split(',')[1];
@@ -345,18 +347,23 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 300,
           system: prompt,
           messages: [{
             role: 'user',
             content: [
-              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgBase64 } },
+              { type: 'image', source: { type: 'base64', media_type: imgMediaType, data: imgBase64 } },
               { type: 'text', text: 'حدد نوع القطعة وألوانها فقط.' }
             ]
           }]
         })
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
+      }
 
       const data = await res.json();
       const text = (data.content||[]).map(b=>b.text||'').join('');
@@ -383,7 +390,7 @@
       document.getElementById('result').style.display = 'block';
 
     } catch(err) {
-      errEl.textContent = '⚠️ حصل خطأ — حاول تاني';
+      errEl.textContent = '⚠️ حصل خطأ — ' + (err.message || 'حاول تاني');
       errEl.style.display = 'block';
     }
 
