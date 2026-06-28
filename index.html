@@ -343,22 +343,23 @@
 - JSON فقط، لا شيء غيره`;
 
     try {
-        const res = await fetch('anthropicapikey.eslamhesham580.workers.dev', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 300,
-          system: prompt,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: imgMediaType, data: imgBase64 } },
-              { type: 'text', text: 'حدد نوع القطعة وألوانها فقط.' }
-            ]
-          }]
-        })
-      });
+        // Add the https:// protocol to target the external worker domain
+           const res = await fetch('https://anthropicapikey.eslamhesham580.workers.dev', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+               model: 'claude-3-5-sonnet-20240620', // Note: Ensure you use a valid Anthropic model name
+               max_tokens: 300,
+               system: prompt,
+               messages: [{
+                 role: 'user',
+                 content: [
+                   { type: 'image', source: { type: 'base64', media_type: imgMediaType, data: imgBase64 } },
+                   { type: 'text', text: 'حدد نوع القطعة وألوانها فقط.' }
+                 ]
+               }]
+             })
+           });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
