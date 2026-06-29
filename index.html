@@ -360,9 +360,13 @@
 - JSON فقط، لا شيء غيره`;
 
     try {
-      const res = await fetch('https://dark-cloud-4cbe.eslamhesham580.workers.dev/', {
+            const res = await fetch('https://dark-cloud-4cbe.eslamhesham580.workers.dev/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          // Add the authentication header required by your Worker
+          'Authorization': 'Bearer YOUR_SECRET_TOKEN' 
+        },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 300,
