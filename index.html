@@ -361,25 +361,22 @@
 
     try {
             const res = await fetch('https://dark-cloud-4cbe.eslamhesham580.workers.dev/', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          // Add the authentication header required by your Worker
-          'Authorization': 'Bearer YOUR_SECRET_TOKEN' 
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 300,
-          system: prompt,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: imgMediaType, data: imgBase64 } },
-              { type: 'text', text: 'حدد نوع القطعة وألوانها فقط.' }
-            ]
-          }]
-        })
-      });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    contents: [{
+      parts: [
+        { inline_data: { mime_type: imgMediaType, data: imgBase64 } },
+        { text: prompt + '\nحدد نوع القطعة وألوانها فقط.' }
+      ]
+    }]
+  })
+});
+
+const data = await res.json();
+const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+const clean = text.replace(/```json|```/g, '').trim();
+const parsed = JSON.parse(clean);
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
