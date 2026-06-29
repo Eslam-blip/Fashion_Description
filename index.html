@@ -40,6 +40,7 @@
     gap: 18px;
   }
 
+  /* Upload */
   .drop-area {
     border: 2px dashed #ddd5c4;
     border-radius: 2px;
@@ -101,6 +102,7 @@
   #analyze-btn.loading .spinner { display: block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* Result */
   #result {
     display: none;
     background: #1a1410;
@@ -265,6 +267,7 @@
       dropArea.style.display = 'none';
       document.getElementById('preview-wrap').style.display = 'block';
 
+      // Compress image to max 1024px and JPEG quality 0.8
       const img = new Image();
       img.onload = () => {
         const MAX = 1024;
@@ -361,10 +364,14 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: imgMediaType, data: imgBase64 } },
-              { text: prompt + '\nحدد نوع القطعة وألوانها فقط.' }
+          model: 'claude-sonnet-4-6',
+          max_tokens: 300,
+          system: prompt,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: imgMediaType, data: imgBase64 } },
+              { type: 'text', text: 'حدد نوع القطعة وألوانها فقط.' }
             ]
           }]
         })
@@ -375,9 +382,9 @@
         throw new Error(errData?.error?.message || `HTTP ${res.status}`);
       }
 
-      const geminiData = await res.json();
-      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const clean = text.replace(/```json|```/g, '').trim();
+      const data = await res.json();
+      const text = (data.content||[]).map(b=>b.text||'').join('');
+      const clean = text.replace(/```json|```/g,'').trim();
       const parsed = JSON.parse(clean);
 
       lastLabel = parsed.label || '—';
